@@ -1,0 +1,154 @@
+`timescale 1ns/1ps
+module tb_receiver;
+reg clk, rst_n, s_tick, rx;
+wire [7:0] dout;
+
+Receiver dut (
+    .clk(clk),
+    .rst_n(rst_n),
+    .s_tick(s_tick),
+    .rx(rx),
+    .dout(dout)  );
+
+initial
+begin
+    clk = 1'b0;
+    forever #5 clk = ~clk; 
+end
+
+task reset();
+begin
+rst_n = 1'b0; 
+#10;
+rst_n = 1'b1;
+end
+endtask
+
+initial 
+begin
+s_tick = 1'b0;
+forever
+begin
+#40 s_tick=1'b1;
+#10 s_tick=1'b0;
+end
+end
+// >>> 1 nhịp s_tick là 50ns >>> ta có 10 bit( 1 start , 8 data , 1 stop) , mà mỗi bit cần 16 nhịp s_tick >>> 10*50*16=8000ns
+
+// Khai báo thời gian 1 bit (Dựa trên 16 nhịp s_tick)
+parameter BIT_PERIOD = 800; // 16 * 50ns
+
+task gui_1_byte(input [7:0] data_in);
+    integer i;
+    begin
+        // 1. Kéo rx xuống 0 để tạo Start bit
+        rx = 1'b0;
+       #BIT_PERIOD;
+
+        // 2. Dùng vòng lặp for để bơm 8 bit dữ liệu vào dây rx (truyền bit LSB trước)
+        for (i = 0; i < 8; i = i + 1) begin
+            rx = data_in[i]; // Gán bit thứ i vào dây rx
+            #BIT_PERIOD;     // Giữ nguyên mức điện áp đó trong thời gian 1 bit
+        end
+
+        // 3. Kéo rx lên 1 để tạo Stop bit
+        rx = 1;
+        #BIT_PERIOD;
+    end
+endtask
+
+reg [7:0] memory [0:3];
+initial begin
+ memory[0] = 8'hFF;
+ memory[1] = 8'h00;
+ memory[2] = 8'b10101010;
+ memory[3] = 8'b01010101;
+end
+
+ integer pass_count = 0;
+integer fail_count = 0;
+ integer i;
+initial begin
+     rx=1'b1;
+  reset();
+  #200;
+  for( i =0;i<4;i=i+1)
+ begin
+   gui_1_byte(memory[i]);
+  $display("du lieu gui di = %h", memory[i] );
+   if(dout === memory[i]) 
+  begin
+   pass_count = pass_count + 1'd1;
+    $display("[PASS]  ;Time=%0T; dlvao =%h; dlnhan =%h ", $time, memory[i], dout);
+    end
+  else 
+   begin
+   fail_count = fail_count + 1'd1;
+     $display("[ERROR]  ;Time=%0T; dlvao =%h; dlnhan =%h ",$time, memory[i], dout);
+  end
+  end
+    $display("=== TONG KET: PASS: %0d | FAIL: %0d ===", pass_count, fail_count);
+$finish;
+end
+endmodule
+// phần em tâm đắc
+*này là đối với trường hợp cái pattern thông thường , các cái case đơn giản phổ biến, directed cases:
+reg [7:0] memory [0:3];
+initial begin
+ memory[0] = 8'hFF;
+ memory[1] = 8'h00;
+ memory[2] = 8'b10101010;
+ memory[3] = 8'b01010101;
+end
+
+ integer pass_count = 0;
+integer fail_count = 0;
+ integer i;
+initial begin
+     rx=1'b1;
+  reset();
+  #200;
+  for( i =0;i<4;i=i+1)
+ begin
+   gui_1_byte(memory[i]);
+  $display("du lieu gui di = %h", memory[i] );
+   if(dout === memory[i]) 
+  begin
+..............
+
+*đối với trường hợp test rx có 1 cái thú vị là
+du lieu gui di = ff
+[ERROR]  ;Time=7510000; dlvao =ff; dlnhan =00 
+du lieu gui di = 00
+[PASS]  ;Time=14810000; dlvao =00; dlnhan =00 
+du lieu gui di = aa
+[ERROR]  ;Time=22110000; dlvao =aa; dlnhan =00 
+du lieu gui di = 55
+[ERROR]  ;Time=29410000; dlvao =55; dlnhan =d5 
+=== TONG KET: PASS: 1 | FAIL: 3 ===
+đối với ff aa và 55 thì đã đúng rồi, thật ra là em không có code gì mới luôn chỉ là trong task gửi 1 byte thì em chỉ sửa cái chỗ mà rx=0 rồi đợi 800ns để nhảy từ trạng thái start sang trạng thái DATA 
+thì em vẫn cho rx=0 rồi đợi sao cho dưới nhịp s_tick thứ 8 là được thì em cho rx=0; #100; rx=1 ,chỉ đơn giản vậy thôi mà kiểu nhiên chớ vớ thằng 00, đối với TH test case này thì đầu ra mà mình mong đợi sẽ là fail, 
+không nhận được dữ liệu thì mới có nghĩa là cái lấy mẫu để chống nhiễu của mình là đúng thì khi không nhận được dữ liệu thì dout sẽ bằng 0,trường hợp có 1 TH mà mình truyền đầu vào là 00 cái nó ra đúng; hết hồn thiệt chớ
+*đối với cái việc mà test cái framing_error thì đơn giản là sau khi truyền dữ liệu đủ 8 bit rồi thì trong task gui_1_byte mình kéo rx=1 rồi đợi 800ns để cho nó từ mức thấp nhảy ngược về mức cao tức từ trạng thái đang hoạt động, 
+nhận dữ liệu , nhận khung truyền mới nhảy ngược về trạng thái IDLE hay trạng thái nghỉ
+du lieu gui di = ff
+[ERROR]  ;Time=8210000; dlvao =ff; dlnhan =00 
+du lieu gui di = 00
+[PASS]  ;Time=16210000; dlvao =00; dlnhan =00 
+du lieu gui di = aa
+[ERROR]  ;Time=24210000; dlvao =aa; dlnhan =54 
+du lieu gui di = 55
+[ERROR]  ;Time=32210000; dlvao =55; dlnhan =54 
+=== TONG KET: PASS: 1 | FAIL: 3 ===
+do tui dùng directed cases là ff 00 aa 55 nên trường hợp 00 hơi nhạy cảm, nên dùng $urandom()
+*kiểu là từ cái task gửi 1 bytes mà chỉ cần chỉnh lại các thông số xíu là test được hết rùi
+
+ ***if( dut.rx_done_tick===1'b0 && dut.ttht === dut.IDLE && dout===memory[i]) 
++tại sao khi mà xét cái cờ báo hiệu hoàn thành với ttht thì lại giải quyết được TH rơi vào đầu vào là số 0???
+để mà xác nhận được rằng một cục dữ liệu có được gửi thành công hay không thì cờ rx_done_tick=1'b1 rồi sao đó nó sẽ được reset về 0 và trạng thái sẽ quay về trạng thái IDLE ( trạng thái nghỉ); 
+đúng là khi phát hiện là có nhiễu nên rx mới kéo xuống mức 0 thì mình cho nó quay về trạng thái IDLE thì rx_done_tick = 1'b0 và ttht = IDLE , 
+nhưng mà mình cũng cần nhớ là mình đang xét cờ ở dưới task gui_1_byte cho nên là khi gửi một cục dữ liệu ok và stop bit =1 thì nó đã quay về trạng thái reset và rx_done_tick của mình cx đc reset về 0 trong trạng thái IDLE, 
+nên mình cần xét thêm cái điều kiện là dout = din , bên cạnh điều kiện rx_done_tick = 1'b0 và IDLE = ttht để make sure là đúng là gửi thành công ,nếu không thỏa cả 3 điều kiện >>> gửi không thành công và fail_count cộng 1;
++tui có thêm phần so sánh dout với din luôn thì giải quyết được cái vấn đề trên nhưng mà nó giải quyết luôn cái framing_error, đương nhiên là phải biết tại sao nó đúng chứ không phải mặc định, cho là, ăn hên???? 
+dù là stopbit=1 hay stopbit=0 thì đều quay về trạng thái IDLE cũng như là rx_done_tick sẽ được reset về 0 nhưng mà khi và chỉ khi stopbit=1 tức rx được kéo lại lên mức 1 thì dout mới được gán giá trị từ thanh ghi tạm (code RTL cho ta thấy vậy) 
+và mình dùng toán tử && tức là cả 3 cái điều kiện đều phải thỏa thì mới tính là nhận thành công cho nên là mặc dù mình không đụng đến cái framing_error ( chưa xét rằng khi quay về IDLE nó có là 1 hay không để biết mà báo fail ) thì mình vẫn đúng 
