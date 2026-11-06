@@ -12,23 +12,8 @@ This project presents a complete RTL design and verification of a Universal Asyn
 * **Error Detection:** Built-in Glitch Rejection (filters spikes < 7 ticks) and Framing Error detection.
 
 ## 2. System Architecture
-                  +-------------------------------------------------+
-                  |                   uart_top                      |
-                  |                                                 |
-                  |   +-----------------------+                     |
-   clk ---------->|-->|  baud_rate_generator  |                     |
-   rst_n -------->|-->|                       |                     |
-                  |   +-----------+-----------+                     |
-                  |               | s_tick (wire nội bộ)            |
-                  |        +------+-------------------+             |
-                  |        |                          |             |
-                  |        v                          v             |
-   start -------->|-->+-------------+            +----------+       |
-   dlv [7:0] ---->|-->| Transmitter |            | Receiver |<------|--- rx (Chân thu)
-   tx_busy <------|---|             |            |          |------>|--> dout [7:0]
-   serialout <----|---|             |            |          |------>|--> rx_done_tick
-   (Chân phát)    |   +-------------+            +----------+------>|--> framing_error
-                  +-------------------------------------------------+
+C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 220013.png
+
 The top module (`uart_top.v`) integrates three sub-modules:
 1. `baud_rate_generator`
 2. `Transmitter`
