@@ -29,7 +29,7 @@ The IP was verified using a Bottom-Up approach:
 * **System Integration (Loopback):** Simulated a closed-loop system connecting TX directly to RX. Implemented event-based synchronization (`wait(tx_busy == 1'b0)`) to replace hardcoded delays, preventing race conditions.
 
 ## 4. Simulation Results
-C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 212540.png
-C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 212753.png
-C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 213010.png
-C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 214414.png
+<br>C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 212540.png
+<br>C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 212753.png
+<br>C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 213010.png
+<br>C:\Users\ADMIN\Pictures\Screenshots\Ảnh chụp màn hình 2026-11-06 214414.png
