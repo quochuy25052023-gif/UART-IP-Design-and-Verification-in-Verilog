@@ -12,7 +12,8 @@ Transmitter dut_tx(.clk(clk), .rst_n(rst_n), .s_tick(s_tick), .start(start), .dl
 
 
 wire [7:0] dout;
-Receiver dut_rx( .clk(clk) , .rst_n(rst_n) , .s_tick(s_tick) , .rx(tx2rx) , .dout(dout) );
+wire rx_done_tick , framing_error;
+Receiver dut_rx( .clk(clk) , .rst_n(rst_n) , .s_tick(s_tick) , .rx(tx2rx) , .dout(dout), .rx_done_tick(rx_done_tick) , .framing_error(framing_error));
 
 
 task reset();
@@ -45,7 +46,7 @@ begin
 start=1'b1;
 #20;
 start=1'b0; // để mà không cho nó chạy liên tiếp với giá trị dữ liệu đầu vào cũ
-  wait(dut_rx.rx_done_tick === 1'b1); #1;
+  wait(rx_done_tick === 1'b1); #1;
 if(dout === dlv)
 begin
  pass_count = pass_count + 1'b1;
@@ -56,7 +57,7 @@ begin
  fail_count = fail_count + 1'b1;
   $display("[ERROR]  ;Time=%0t; dlvao =%h; dlnhan =%h ",$time, dlv, dout);
 end
-  wait(dut_tx.tx_busy === 1'b0);
+  wait(tx_busy === 1'b0);
 end
   
  $display("=== TONG KET: PASS: %0d | FAIL: %0d ===", pass_count, fail_count);
