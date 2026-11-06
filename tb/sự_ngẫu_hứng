@@ -140,15 +140,15 @@ du lieu gui di = aa
 du lieu gui di = 55
 [ERROR]  ;Time=32210000; dlvao =55; dlnhan =54 
 === TONG KET: PASS: 1 | FAIL: 3 ===
-do tui dùng directed cases là ff 00 aa 55 nên trường hợp 00 hơi nhạy cảm, nên dùng $urandom()
+do em dùng directed cases là ff 00 aa 55 nên trường hợp 00 hơi nhạy cảm, nên dùng $urandom()
 *kiểu là từ cái task gửi 1 bytes mà chỉ cần chỉnh lại các thông số xíu là test được hết rùi
 
- ***if( dut.rx_done_tick===1'b0 && dut.ttht === dut.IDLE && dout===memory[i]) 
+ ***if( rx_done_tick===1'b0 && dut.ttht === dut.IDLE && dout===memory[i]) 
 +tại sao khi mà xét cái cờ báo hiệu hoàn thành với ttht thì lại giải quyết được TH rơi vào đầu vào là số 0???
 để mà xác nhận được rằng một cục dữ liệu có được gửi thành công hay không thì cờ rx_done_tick=1'b1 rồi sao đó nó sẽ được reset về 0 và trạng thái sẽ quay về trạng thái IDLE ( trạng thái nghỉ); 
 đúng là khi phát hiện là có nhiễu nên rx mới kéo xuống mức 0 thì mình cho nó quay về trạng thái IDLE thì rx_done_tick = 1'b0 và ttht = IDLE , 
 nhưng mà mình cũng cần nhớ là mình đang xét cờ ở dưới task gui_1_byte cho nên là khi gửi một cục dữ liệu ok và stop bit =1 thì nó đã quay về trạng thái reset và rx_done_tick của mình cx đc reset về 0 trong trạng thái IDLE, 
 nên mình cần xét thêm cái điều kiện là dout = din , bên cạnh điều kiện rx_done_tick = 1'b0 và IDLE = ttht để make sure là đúng là gửi thành công ,nếu không thỏa cả 3 điều kiện >>> gửi không thành công và fail_count cộng 1;
-+tui có thêm phần so sánh dout với din luôn thì giải quyết được cái vấn đề trên nhưng mà nó giải quyết luôn cái framing_error, đương nhiên là phải biết tại sao nó đúng chứ không phải mặc định, cho là, ăn hên???? 
++em có thêm phần so sánh dout với din luôn thì giải quyết được cái vấn đề trên nhưng mà nó giải quyết luôn cái framing_error, đương nhiên là phải biết tại sao nó đúng chứ không phải mặc định, cho là, ăn hên???? 
 dù là stopbit=1 hay stopbit=0 thì đều quay về trạng thái IDLE cũng như là rx_done_tick sẽ được reset về 0 nhưng mà khi và chỉ khi stopbit=1 tức rx được kéo lại lên mức 1 thì dout mới được gán giá trị từ thanh ghi tạm (code RTL cho ta thấy vậy) 
 và mình dùng toán tử && tức là cả 3 cái điều kiện đều phải thỏa thì mới tính là nhận thành công cho nên là mặc dù mình không đụng đến cái framing_error ( chưa xét rằng khi quay về IDLE nó có là 1 hay không để biết mà báo fail ) thì mình vẫn đúng 
